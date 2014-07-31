@@ -1,11 +1,15 @@
 <?php
+
 /**
- *  gmCaptcha vers. 0.1
- *  Captcha graphic, mathematical, mixed
- *
- *  © 2014 Gianluigi "A35G"
- *  http://www.hackworld.it - http://www.gmcode.it
- **/
+ * gmCaptcha vers. 0.1 - A concept of Captcha
+ * -----------------------------------------------
+ * Generate Captcha graphic, mathematical or mixed
+ * -----------------------------------------------
+ * Developed by Gianluigi 'A35G' - © 2013 - 2014
+ * http://www.hackworld.it - http://www.gmcode.it
+ * -----------------------------------------------
+ */
+
 # Set Type of Captcha
 #
 # 1: Captcha graphic;
@@ -23,8 +27,4 @@
 # 5: Random;
 #
 # If variable not set or empty, the Type of mathematical operation is Addition to default.
-  define("math_op", "3");
-#
-# Init Script
-  include("./inc/core.class.php");
-  $bard = new Core;
+  define("math_op", "5");

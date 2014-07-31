@@ -7,12 +7,82 @@
  *  http://www.hackworld.it/ - http://www.gmcode.it /
  **/
 
+  if (file_exists(dirname(__FILE__).'/config.php'))
+    include(dirname(__FILE__).'/config.php');
+
   class Core {
 
     var $rpath;
 
     var $useC = type_cptc;
     var $useOp = math_op;
+
+    private $row_file;
+
+    function __construct() {
+
+
+
+
+    }
+
+    private function countRow($file_dict) {
+
+      if (file_exists($file_dict) && is_readable($file_dict)) {
+
+        clearstatcache();
+
+        $size_file = filesize($file_dict);
+
+        if (!empty($size_file)) {
+
+          $vfile = fopen($file_dict, "r");
+
+          $righe = 0;
+
+          if ($vfile) {
+
+            while (fgets($vfile))
+                $righe++;
+
+          }
+
+          fclose($vfile);
+
+          $this->row_file = $righe;
+
+        }
+
+      }
+
+    }
+
+    private function read_line_file($filec, $line_num, $delimiter = "\n") {
+
+      $i = 1;
+
+      $fp = fopen($filec, "r");
+
+      if ($fp) {
+
+        while (!feof($fp)) {
+
+          fseek($fp, ftell($fp));
+          $buffer = stream_get_line($fp, 4096, $delimiter);
+
+          if ($i == $line_num)
+            return $buffer;
+
+          $i++;
+          $buffer = "";
+
+        }
+
+      }
+
+      return false;
+
+    }
 
     private function getRand($enum) {
 
@@ -33,7 +103,7 @@
           $iNum = mt_rand(1, 4);
         break;
         default:
-          $iNum = mt_rand(1, 99);
+          $iNum = self::getRand('1');
         break;
       }
 
@@ -71,88 +141,67 @@
       $_SESSION['in_captcha'] = $args;
     }
 
-    private function visMat($arg_f, $arg_s, $arg_t) {
-      return sprintf ("%1\$d %3\$s %2\$d", $arg_f, $arg_s, $arg_t);
-    }
+    private function checkMath($bval='') {
 
-    private function getAddition() {
+      if (!isset($this->useOp) || empty($this->useOp) || !is_numeric($this->useOp))
+        $selOpr = 1;
+      else
+        $selOpr = $this->useOp;
 
-      $f_num = $this->getRand('2');
-      $s_num = $this->getRand('2');
-
-      $res_opr = ($f_num + $s_num);
-
-      $this->toSession($res_opr);
-
-      return $this->visMat($f_num, $s_num, "+");
-    }
-
-    private function getSubtraction() {
-
-      $f_num = $this->getRand('3');
-      $s_num = $this->getRand('2');
-
-      $res_opr = ($f_num - $s_num);
-
-      $this->toSession($res_opr);
-
-      return $this->visMat($f_num, $s_num, "-");
-    }
-
-    private function getMultiplication() {
-
-      $f_num = $this->getRand('2');
-      $s_num = $this->getRand('2');
-
-      $res_opr = ($f_num * $s_num);
-
-      $this->toSession($res_opr);
-
-      return $this->visMat($f_num, $s_num, "x");
-    }
-
-    private function getDivision() {
-
-      $s_num = $this->getRand('2');
-      $f_num = ($s_num * $this->getRand('4'));
-
-      $res_opr = ($f_num / $s_num);
-
-      $this->toSession($res_opr);
-
-      return $this->visMat($f_num, $s_num, ":");
-    }
-
-    private function checkMath() {
-
-      if (!isset($this->useOp) || empty($this->useOp))
-        $this->useOp = 1;
-
-      $opr = htmlentities($this->useOp);
+      $opr = (!isset($bval) || empty($bval)) ? htmlentities($selOpr) : $bval;
 
       switch ($opr) {
         case '1':
-          $visual_captcha = $this->getAddition();
+
+          $f_num = $this->getRand('2');
+          $s_num = $this->getRand('2');
+          $op_sign = '+';
+
+          $res_opr = ($f_num + $s_num);
+
         break;
         case '2':
-          $visual_captcha = $this->getSubtraction();
+
+          $f_num = $this->getRand('3');
+          $s_num = $this->getRand('2');
+          $op_sign = '-';
+
+          $res_opr = ($f_num - $s_num);
+
         break;
         case '3':
-          $visual_captcha = $this->getMultiplication();
+
+          $f_num = $this->getRand('2');
+          $s_num = $this->getRand('2');
+          $op_sign = 'x';
+
+          $res_opr = ($f_num * $s_num);
+
         break;
         case '4':
-          $visual_captcha = $this->getDivision();
+
+          $s_num = $this->getRand('2');
+          $f_num = ($s_num * $this->getRand('4'));
+          $op_sign = ':';
+
+          $res_opr = ($f_num / $s_num);
+
         break;
         case '5':
-          $this->useOp = $this->getRand('5');
-          $visual_captcha = self::checkMath();
+
+          return $this->checkMath($this->getRand('5'));
+
         break;
         default:
-          $visual_captcha = $this->getAddition();
+
+          $this->checkMath();
+
         break;
       }
 
-      return $visual_captcha;
+      $this->toSession($res_opr);
+
+      return $f_num.' '.$op_sign.' '.$s_num;
 
     }
 
@@ -183,7 +232,7 @@
 
         $color = $colors[$i % count($colors)];
 
-        imagettftext($img, 20 + rand(0, 8), -20 + rand(0, 30), ($i + 0.3) * $space, 25 + rand(0, 5), $color, './font/carbon.ttf', $code{$i});
+        imagettftext($img, 20 + rand(0, 8), -20 + rand(0, 30), ($i + 0.3) * $space, 25 + rand(0, 5), $color, './font/cheapink.ttf', $code{$i});
 
       }
 
@@ -197,10 +246,14 @@
 
       @unlink($this->rpath . 'captcha.png');
 
-      return $code . $this->visualImg(base64_encode($imgbinary));
+      return /*$code . */$this->visualImg(base64_encode($imgbinary));
 
     }
 
+    /**
+     * Check the type of captcha to show on the site
+     * @return Image or String with Captcha created by Script
+     */
     private function checkCaptcha() {
 
       if (!isset($this->useC) || empty($this->useC))
@@ -217,7 +270,8 @@
           $ibs = $this->checkMath();
         break;
         case '3':
-          $ibs = "mixed";
+          $code = $this->checkMath();
+          $ibs = $this->createImg($code);
         break;
         default:
           $ibs = $this->checkMath();
@@ -239,9 +293,49 @@
 
     }
 
+    /**
+     * Check if session is started
+     * @return [boolean] Status of session in PHP
+     */
+    private function checkSession() {
+
+      if (php_sapi_name() !== 'cli') {
+
+        if (version_compare(phpversion(), '5.4.0', '>='))
+          return session_status() === PHP_SESSION_ACTIVE ? TRUE : FALSE;
+        else
+          return session_id() === '' ? FALSE : TRUE;
+
+      }
+
+      return FALSE;
+
+    }
+
+    /**
+     * Check if session is started otherwise I can start and destroy
+     * the session variable for the captcha if it already exists
+     */
+    private function newCode() {
+
+      if ($this->checkSession() === FALSE) {
+        session_name("gmC");
+        session_start();
+      }
+
+      if (isset($_SESSION['in_captcha']) && !empty($_SESSION['in_captcha']))
+        unset($_SESSION['in_captcha']);
+
+    }
+
+    /**
+     * Start code to obtain Captcha
+     * @return Image or String with Captcha required
+     */
     public function initCaptcha() {
 
       $this->setVariable();
+      $this->newCode();
 
       return $this->checkCaptcha();
 
