@@ -103,7 +103,7 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
 
 - The result of mathematical operations and the text of graphical Captchas, is contained within the session variable `$_SESSION['in_captcha']`
 
--	**Upcoming**:
+#  Upcoming
 
   -	[ ] TextToSpeech;
   -	[ ] Refresh graphical captchas;
