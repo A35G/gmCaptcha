@@ -2,7 +2,7 @@
 namespace gmCaptcha;
 
 /**
- * gmCaptcha vers. 0.1.5 - A concept of Captcha
+ * gmCaptcha vers. 0.1.6 - A concept of Captcha
  * -----------------------------------------------
  * Generate Captcha graphic, mathematical or mixed
  * with random text or with use of a dictionary
@@ -28,11 +28,11 @@ class Core
     private $fontDir;
 
     /**
-     * The location of the gmCaptcha image directory
+     * The location of the gmCaptcha temp directory
      *
      * @var string
      */
-    private $imageDir;
+    private $tempDir;
 
     private $defaultFont = "cheapink.ttf";
 
@@ -81,7 +81,7 @@ class Core
         $rootDir = realpath(__DIR__ . "/../");
         $this->setRootDir($rootDir);
         $this->setFontDir($rootDir . "/font");
-        $this->setImgDir($rootDir . "/public");
+        $this->setTempDir($rootDir . "/temp");
         $this->setDictDir($rootDir . "/dictionary");
 
         if ($this->useDictionary !== FALSE && ! empty($this->dictionaryFile)):
@@ -100,11 +100,11 @@ class Core
     }
 
     /**
-     * @param string $imgDir
+     * @param string $tempDir
      */
-    public function setImgDir(string $imgDir): void
+    public function setTempDir(string $tempDir): void
     {
-        $this->imageDir = $imgDir;
+        $this->tempDir = $tempDir;
     }
 
     /**
@@ -210,15 +210,15 @@ class Core
             imagettftext($img, 20 + rand(0, 8), -20 + rand(0, 30), ($i + 0.3) * $space, 25 + rand(0, 5), $color, $this->fontDir . '/' . $this->defaultFont, $code{$i});
         endfor;
 
-        imagepng($img, $this->imageDir . '/captcha.png', 9);
+        imagepng($img, $this->tempDir . '/captcha.png', 9);
 
-        $imgfile = $this->imageDir . "/captcha.png";
+        $imgfile = $this->tempDir . "/captcha.png";
 
         $imgbinary = fread(fopen($imgfile, "r"), filesize($imgfile));
 
         imagedestroy($img);
 
-        @unlink($this->imageDir . '/captcha.png');
+        @unlink($this->tempDir . '/captcha.png');
 
         $this->toSession($code);
 
@@ -309,18 +309,22 @@ class Core
         return sprintf("%d %s %d",intval($f_num), $op_sign, intval($s_num));
     }
 
-    public function makeGraphic(string $type = 'T', int $sign = 1): string
+    public function makeGraphic(string $type = 'T', int $sign = 1): ?string
     {
-        switch ($type):
-            case "T":
-                $code = $this->randPhrase(2,2,2);
-                $ibs = $this->createImg($code);
-                break;
-            case "M":
-                $code = $this->checkMath($sign);
-                $ibs = $this->createImg($code);
-                break;
-        endswitch;
+        if (get_extension_funcs("gd") !== FALSE):
+            switch ($type):
+                case "T":
+                    $code = $this->randPhrase(2,2,2);
+                    $ibs = $this->createImg($code);
+                    break;
+                case "M":
+                    $code = $this->checkMath($sign);
+                    $ibs = $this->createImg($code);
+                    break;
+            endswitch;
+        else:
+            $ibs = NULL;
+        endif;
 
         return $ibs;
     }
@@ -376,10 +380,14 @@ class Core
 
     public function makeFromDictionary(): ?string
     {
-        if ( ! empty($this->dictWords)):
-            $randKey = array_rand($this->dictWords);
-            $code = $this->dictWords[$randKey];
-            return $ibs = $this->createImg($code);
+        if (get_extension_funcs("gd") !== FALSE):
+            if ( ! empty($this->dictWords)):
+                $randKey = array_rand($this->dictWords);
+                $code = $this->dictWords[$randKey];
+                return $ibs = $this->createImg($code);
+            else:
+                return NULL;
+            endif;
         else:
             return NULL;
         endif;
