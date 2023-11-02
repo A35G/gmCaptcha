@@ -12,7 +12,7 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
 
 - Make new instance
     ```php
-    $gmc = new Core();
+    $gmc = new Core;
     ```
 
 - Call the type of desiderated Captcha:
@@ -102,3 +102,11 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
   - `$dictSettings['maxWordLength']`
 
 - The result of mathematical operations and the text of graphical Captchas, is contained within the session variable `$_SESSION['in_captcha']`
+
+-	**Upcoming**:
+
+  -	[ ] TextToSpeech;
+  -	[ ] Refresh graphical captchas;
+  -	[ ] Error logger.
+
+ Any suggestion, comment or advice, is welcome.
