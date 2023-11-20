@@ -1,0 +1,30 @@
+{
+    "name": "a35g/gmcaptcha",
+    "description": "Study on Captcha and PHP",
+    "license": "MIT",
+    "type": "project",
+    "support": {
+        "source": "https://github.com/A35G/gmCaptcha"
+    },
+    "require": {
+        "php": "^7.3 || ^8.0",
+        "ext-gd": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "classmap": [
+            "app/"
+        ],
+        "exclude-from-classmap": [
+            "/config/",
+            "/logs/"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}
