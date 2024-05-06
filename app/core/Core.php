@@ -1,17 +1,23 @@
 <?php
-
 namespace App\Core;
 
 use App\Book\Words;
 use App\Error\Error;
 
+if (php_sapi_name() !== 'cli') {
+    if ((session_status() === PHP_SESSION_ACTIVE ? true : false) === false) {
+        session_name("gmC");
+        session_start();
+    }
+}
+
 /**
- * gmCaptcha vers. 0.1.8 - A concept of Captcha
+ * gmCaptcha vers. 0.1.10 - A concept of Captcha
  * -----------------------------------------------
  * Generate Captcha graphic, mathematical or mixed
  * with random text or with use of a dictionary
  * -----------------------------------------------
- * Developed by Gianluigi 'A35G' - © 2013 - 2023
+ * Developed by Gianluigi 'A35G' - © 2013 - 2024
  * https://www.hackworld.it/
  * -----------------------------------------------
  */
@@ -22,103 +28,79 @@ class Core
      *
      * @var string
      */
-    private $rootDir;
+    private static $rootDir;
 
     /**
      * The folder of gmCaptcha App files
      *
      * @var string
      */
-    private $appDir;
+    private static $appDir;
 
     /**
      * The location of the gmCaptcha font directory
      *
      * @var string
      */
-    private $fontDir;
+    private static $fontDir;
 
-    private $defaultFont;
+    private static $defaultFont;
 
     /**
      * The location of the gmCaptcha temp directory
      *
      * @var string
      */
-    private $tempDir;
+    private static $tempDir;
 
-    public $config = array();
+    public static $config = array();
+
+    private static $e;
+    private static $w;
 
     public function __construct()
     {
-        $rootDir = realpath(__DIR__ . "/../../");
-        $this->setRootDir($rootDir);
+        self::$rootDir = realpath(__DIR__."/../../");
+        self::$appDir = realpath(__DIR__."/../");
+        self::$fontDir = self::$rootDir."/public/font";
+        self::$tempDir = self::$rootDir."/public/temp";
 
-        $appDir = realpath(__DIR__ . "/../");
-        $this->setAppDir($appDir);
+        self::$config = self::get_config();
 
-        $this->setFontDir($rootDir . "/public/font");
-        $this->setTempDir($rootDir . "/temp");
+        self::$e = new Error();
+        self::$w = new Words();
 
-        $this->config = $this->get_config();
-
-        $this->initConfigure();
-    }
-
-    /**
-     * @param string $rootDir
-     */
-    public function setRootDir(string $rootDir): void
-    {
-        $this->rootDir = $rootDir;
-    }
-
-    /**
-     * @param string $appDir
-     */
-    public function setAppDir(string $appDir): void
-    {
-        $this->appDir = $appDir;
-    }
-
-    /**
-     * @param string $fontDir
-     */
-    public function setFontDir(string $fontDir): void
-    {
-        $this->fontDir = $fontDir;
-    }
-
-    /**
-     * @param string $tempDir
-     */
-    public function setTempDir(string $tempDir): void
-    {
-        $this->tempDir = $tempDir;
+        if (is_array(self::$config) && !empty(self::$config)) {
+            self::initConfigure();
+        }
     }
 
     private function get_config()
     {
         static $config;
+        $stop = false;
 
         if (empty($config)) {
-            $file_path = $this->appDir . '/config/config.php';
+            $file_path = self::$appDir.'/config/config.php';
             $found = false;
             if (file_exists($file_path)) {
                 $found = true;
                 require $file_path;
             }
 
-            if ( ! $found) {
-                $err = new Error();
-                $err->logError("Configuration file does not exist.");
-                exit(0);
+            if (!$found) {
+                $stop = true;
+                $errm = "Configuration file does not exist.";
             }
 
-            if ( ! isset($config) OR ! is_array($config)) {
-                $err = new Error();
-                $err->logError("Your config file does not appear to be formatted
-                 correctly.");
+            if ($stop === false && !is_array($config)) {
+                $stop = true;
+                $errm = "Your config file does not appear to be formatted ";
+                $errm .= "correctly.";
+            }
+
+            if ($stop) {
+                self::$e->logError($errm);
                 exit(0);
             }
         }
@@ -126,91 +108,47 @@ class Core
         return $config;
     }
 
-    private function setFont(): void
+    private static function setFont()
     {
-        if (array_key_exists("appFont",$this->config) === false) {
-            $err = new Error();
-            $err->logError("No fonts specified in the config file");
+        if (array_key_exists("appFont",self::$config) === false) {
+            self::$e->logError("No fonts specified in the config file");
             exit(0);
         }
 
-        if (empty($this->config["appFont"])) {
-            $err = new Error();
-            $err->logError("No fonts specified in the config file");
+        if (empty(self::$config["appFont"])) {
+            self::$e->logError("No fonts specified in the config file");
             exit(0);
         }
 
-        if (is_readable($this->fontDir . "/" . $this->config["appFont"]) === FALSE) {
-            $err = new Error();
-            $err->logError("Font file not found or not readable");
+        if (is_readable(self::$fontDir."/".self::$config["appFont"]) === false) {
+            self::$e->logError("Font file not found or not readable");
             exit(0);
         }
 
-        $this->defaultFont = $this->config["appFont"];
+        self::$defaultFont = self::$config["appFont"];
     }
 
     private function checkTempPathPermission()
     {
-        if (is_readable($this->tempDir) !== TRUE 
-            OR is_writable($this->tempDir) !== TRUE) {
-            $err = new Error();
-            $err->logError("Check read and write permissions for the \"temp\" folder");
+        if (!is_readable(self::$tempDir) OR !is_writable(self::$tempDir)) {
+            $mx = "Check read and write permissions for the \"temp\" folder";
+            self::$e->logError($mx);
             exit(0);
         }
     }
 
     private function initConfigure()
     {
-        $this->setFont();
-        $this->checkTempPathPermission();
-        $this->newCode();
-    }
-
-    private function checkSession(): bool
-    {
-        if (php_sapi_name() !== 'cli') {
-            if (version_compare(phpversion(), '5.4.0', '>=')) {
-                return session_status() === PHP_SESSION_ACTIVE ? TRUE : FALSE;
-            } else {
-                return session_id() === '' ? FALSE : TRUE;
-            }
-        }
-
-        return FALSE;
-    }
-
-    private function newCode(): void
-    {
-        if (array_key_exists("appSessionVariable",$this->config) === FALSE) {
-            $err = new Error();
-            $err->logError("No name specified in config file for session variable");
-            exit(0);
-        }
-
-        if (empty($this->config["appSessionVariable"])) {
-            $err = new Error();
-            $err->logError("No name specified in config file for session variable");
-            exit(0);
-        }
-        
-        if ($this->checkSession() === FALSE) {
-            session_name("gmC");
-            session_start();
-        }
-
-        if (isset($_SESSION[$this->config["appSessionVariable"]])
-            && ! empty($_SESSION[$this->config["appSessionVariable"]])) {
-            unset($_SESSION[$this->config["appSessionVariable"]]);
-        }
+        self::setFont();
+        self::checkTempPathPermission();
     }
 
     private function randPhrase(
         int $upper = 2,
         int $lower = 2,
         int $numeric = 2,
-        int $other = NULL
-    ): string {
-
+        int $other = null
+    ) {
         $phsWord = '';
         $phsOrder = array();
 
@@ -249,22 +187,31 @@ class Core
         return $phsWord;
     }
 
-    private function toSession(string $args): void
+    private static function toSession(array $args)
     {
-        if (array_key_exists("appSessionVariable",$this->config) !== false
-            && ! empty($this->config["appSessionVariable"])) {
+        if (array_key_exists("appSessVar",self::$config) !== false
+            && !empty(self::$config["appSessVar"])) {
             if (!empty($args)) {
-                $lbSess = htmlspecialchars($this->config["appSessionVariable"]);
-                $_SESSION[$lbSess] = base64_encode($args);
+                $lbSess = htmlspecialchars(self::$config["appSessVar"]);
+                $_SESSION[$lbSess] = base64_encode($args["c"]);
             }
         }
     }
 
-    public function createImg(string $code): string
+    public static function checkIsValidJSON(string $data)
+    {
+        if (!empty($data)) {
+            return is_string($data) && 
+              is_array(json_decode($data, true)) ? true : false;
+        }
+
+        return false;
+    }
+
+    public static function createImg(string $code)
     {
         if (get_extension_funcs("gd") === false) {
-            $err = new Error();
-            $err->logError("GD extension not enabled or not installed");
+            self::$e->logError("GD extension not enabled or not installed");
             exit(0);
         }
 
@@ -272,7 +219,9 @@ class Core
         $y = 37;
         $colors = array();
 
-        $space = ($x / (strlen($code) + 1));
+        $clen = strlen($code);
+
+        $space = ($x / ($clen + 1));
 
         $img = imagecreatetruecolor($x, $y);
         $bg = imagecolorallocate($img, 255, 255, 255);
@@ -291,36 +240,38 @@ class Core
             $bg
         );
 
-        for ($i = 0; $i < strlen($code); ++$i) {
+        for ($i = 0; $i < $clen; ++$i) {
             $color = $colors[$i % count($colors)];
-            imagettftext(
+            @imagettftext(
                 $img,
                 (20 + rand(0, 8)),
                 (-20 + rand(0, 30)),
                 (($i + 0.3) * $space),
                 (25 + rand(0, 5)),
                 $color,
-                $this->fontDir . '/' . $this->defaultFont,
+                self::$fontDir.'/'.self::$defaultFont,
                 $code[$i]
             );
         }
 
-        imagepng($img, $this->tempDir . '/captcha.png', 9);
+        imagepng($img, self::$tempDir.'/captcha.png', 9);
 
-        $imgfile = $this->tempDir . "/captcha.png";
+        $imgfile = self::$tempDir."/captcha.png";
 
         $imgbinary = fread(fopen($imgfile, "r"), filesize($imgfile));
 
         imagedestroy($img);
 
-        @unlink($this->tempDir . '/captcha.png');
+        @unlink(self::$tempDir.'/captcha.png');
 
-        $this->toSession($code);
+        self::toSession(array(
+            "c" =>  $code
+        ));
 
         return base64_encode($imgbinary);
     }
 
-    private function getRand(int $enum): int
+    private static function getRand(int $enum)
     {
         switch ($enum) {
             case '1':
@@ -346,103 +297,124 @@ class Core
         return $iNum;
     }
 
-    private function checkMath(int $bval): string
+    private static function checkMath(int $bval)
     {
-        if (array_key_exists("appOperation",$this->config) === false) {
+        if (array_key_exists("appOperation",self::$config) === false) {
             $selOpr = 1;
-        } elseif (is_numeric($this->config["appOperation"]) === false) {
+        } elseif (is_numeric(self::$config["appOperation"]) === false) {
             $selOpr = 1;
-        } elseif (intval($this->config["appOperation"]) === 0) {
+        } elseif (intval(self::$config["appOperation"]) === 0) {
             $selOpr = 1;
-        } elseif (intval($this->config["appOperation"]) > 5) {
+        } elseif (intval(self::$config["appOperation"]) > 5) {
             $selOpr = 1;
         } else {
-            $selOpr = intval($this->config["appOperation"]);
+            $selOpr = intval(self::$config["appOperation"]);
         }
 
-        $opr = (intval($bval) > 0 && intval($bval) <= 5) ? intval($bval) : $selOpr;
+        $opr = (intval($bval) > 0 
+            && intval($bval) <= 5) ? intval($bval) : $selOpr;
 
         $f_num = $s_num = $res_opr = 0;
         switch ($opr) {
             case '1':
-                $f_num = $this->getRand(2);
-                $s_num = $this->getRand(2);
+                $f_num = self::getRand(2);
+                $s_num = self::getRand(2);
                 $op_sign = '+';
 
                 $res_opr = (intval($f_num) + intval($s_num));
                 break;
             case '2':
-                $f_num = $this->getRand(3);
-                $s_num = $this->getRand(2);
+                $f_num = self::getRand(3);
+                $s_num = self::getRand(2);
                 $op_sign = '-';
 
                 $res_opr = (intval($f_num) - intval($s_num));
                 break;
             case '3':
-                $f_num = $this->getRand(2);
-                $s_num = $this->getRand(2);
+                $f_num = self::getRand(2);
+                $s_num = self::getRand(2);
                 $op_sign = 'x';
 
                 $res_opr = (intval($f_num) * intval($s_num));
                 break;
             case '4':
-                $s_num = $this->getRand(2);
-                $f_num = (intval($s_num) * $this->getRand(4));
+                $s_num = self::getRand(2);
+                $f_num = (intval($s_num) * self::getRand(4));
                 $op_sign = ':';
 
                 $res_opr = (intval($f_num) / intval($s_num));
                 break;
             case '5':
-                return self::checkMath($this->getRand(5));
+                return self::checkMath(self::getRand(5));
                 break;
             default:
                 $self::checkMath();
                 break;
         }
 
-        $this->toSession($res_opr);
+        self::toSession(array(
+            "c" =>  $res_opr
+        ));
 
         return sprintf("%d %s %d",intval($f_num), $op_sign, intval($s_num));
     }
 
-    public function makeGraphic(string $type = 'T', int $sign = 1)
+    private static function makeGraphic(string $type = 'T', int $sign = 1)
     {
         switch ($type) {
             case "T":
-                $code = $this->randPhrase(2,2,2);
-                $dataImg = $this->createImg($code);
+                $code = self::randPhrase(2,2,2);
+                $dataImg = self::createImg($code);
                 break;
             case "M":
-                $code = $this->checkMath($sign);
-                $dataImg = $this->createImg($code);
+                $code = self::checkMath($sign);
+                $dataImg = self::createImg($code);
                 break;
         }
 
-        if (isset($dataImg) && !empty($dataImg)) {
-            include $this->rootDir . "/public/view/captchaGraphic.php";
-        }
+        return $dataImg;
     }
 
-    public function makeMath(int $sign = 1)
+    public static function makeMath(int $sign = 1)
     {
-        $dataString = $this->checkMath($sign);
-        if (isset($dataString) && !empty($dataString)) {
-            include $this->rootDir . "/public/view/captchaText.php";
-        }
+        return self::checkMath($sign);
     }
 
-    public function makeFromDictionary()
+    private static function makeFromDictionary()
     {
-        $dc = new Words;
-        $dc->makeFromDictionary();
+        return self::$w->makeFromDictionary();
     }
 
-    public function makeAdvanced()
+    public static function makeFull(string $options)
     {
-        $code = $this->randPhrase(0,3,3);
-        $dataImg = $this->createImg($code);
-        if (isset($dataImg) && !empty($dataImg)) {
-            include $this->rootDir . "/public/view/captchaFull.php";
+        if (!empty($options)) {
+            $j = json_decode($options,true);
+            if (!empty($j)) {
+                if ($j["style"] === "text") {
+                    $dataImg = (self::$config["appUseDictionary"]) 
+                    ? self::makeFromDictionary() 
+                    : self::makeGraphic("T");
+                }
+
+                if ($j["style"] === "math") {
+                    $inm = (array_key_exists("custom",$j) 
+                        && is_numeric($j["custom"]) 
+                        && ((1 <= intval($j["custom"])) 
+                            && (intval($j["custom"]) <= 5))) 
+                    ? intval($j["custom"]) 
+                    : intval(self::$config["appOperation"]);
+
+                    $dataImg = self::makeGraphic("M",$inm);
+                }
+            }
         }
+
+        return $dataImg;
+    }
+
+    public static function callDataSound()
+    {
+        $lbSess = htmlspecialchars(self::$config["appSessVar"]);
+        return $_SESSION[$lbSess];
     }
 }
