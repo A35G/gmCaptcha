@@ -18,8 +18,7 @@
             "app/"
         ],
         "exclude-from-classmap": [
-            "/config/",
-            "/logs/"
+            "/config/"
         ]
     },
     "config": {
