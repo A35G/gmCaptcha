@@ -10,27 +10,26 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
   ```
   composer install
   ```
-- Include **autoload.php** file
-  ```php
-  require_once './vendor/autoload.php';
+- Include **gmCaptcha.js** (or ***gmCaptcha.min.js***) file from "public/assets/js" directory
+  ```html
+  <script src="./public/assets/js/gmCaptcha.js" type="text/javascript"></script>
   ```
 
 - Make new instance
-    ```php
-    use App\Core\Core;
-    $gmc = new Core();
+    ```html
+    <script type="text/javascript">
+    new gmCaptcha()
+    </script>
     ```
 
 - Call the type of desiderated Captcha:
 
   Type | Call | Example
   --- | --- | ---
-  Graphical Captcha - *Random Text* | `$gmc->makeGraphic("T");` | <img src="./screenshots/Graphical Captcha - Random Text.png" />
-  Graphical Captcha - *Mathematical operation* | `$gmc->makeGraphic("M");` | <img src="./screenshots/Graphical Captcha - Mathematical Operation.png" />
-  Graphical Captcha - *Mathematical operation with sign specification* | `$gmc->makeGraphic("M",3);` | <img src="./screenshots/Graphical Captcha - Mathematical operation with specified.png" />
-  Textual Captcha - *Mathematical Operation* | `$gmc->makeMath();` | <img src="./screenshots/Textual Captcha - Mathematical Operation.png" />
-  Textual Captcha - *Mathematical Operation with sign specification* | `$gmc->makeMath(4);` | <img src="./screenshots/Textual Captcha - Mathematical operation with specified.png" />
-  Graphical Captcha - *Text from Dictionary* | `$gmc->makeFromDictionary();` | <img src="./screenshots/Captcha-Dictionary.png" />
+  Graphical Captcha - *Mathematical operation* | `new gmCaptcha({extra: {style: "math"}})` | <img src="./screenshots/Graphical Captcha - Mathematical Operation.png" />
+  Graphical Captcha - *Mathematical operation with sign specification* | `new gmCaptcha({extra: {style: "math",custom: 3}})` | <img src="./screenshots/Graphical Captcha - Mathematical operation with specified.png" />
+  Textual Captcha - *Mathematical Operation* | `new gmCaptcha({type: "text"})` | <img src="./screenshots/Textual Captcha - Mathematical Operation.png" />
+  Textual Captcha - *Mathematical Operation with sign specification* | `new gmCaptcha({type: "text",extra: {custom: 4}})` | <img src="./screenshots/Textual Captcha - Mathematical operation with specified.png" />
 
 # Features
 
@@ -46,13 +45,19 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
   - `['appDictionarySettings']['minWordLength']`
   - `['appDictionarySettings']['maxWordLength']`
 
+- If you choose not to use the Dictionary, the script will generate Captcha with random text.
+
 - The result of mathematical operations and the text of graphical Captchas are contained in a session variable; its name can be customized by enhancing the contents of the `appSessionVariable` key whithin the **config** file.
 
-#  Upcoming
+-	TextToSpeech (*It is only present in the graphical version of the Captcha* and you can customize the language via the following parameter):
+    ```html
+    <script type="text/javascript">
+    new gmCaptcha({spellLang: "en-US"})
+    </script>
+    ```
 
-  -	[ ] TextToSpeech; - *Devs*
-  -	[ ] Refresh graphical captchas;
-  -	[x] Error logger. - **Testing**
+-	Refresh graphical captchas (*It is only present in the graphical version of the Captcha*);
+-	Error logger.
 ---
 > [!NOTE]
 > There are several types of Captcha online, some famous, some less so, all certainly strong and functional.
