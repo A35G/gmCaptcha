@@ -14,10 +14,10 @@ $config["appFont"] = "cheapink.ttf";
 $config["appOperation"] = 1;
 
 //  Dictionary
-$config["appUseDictionary"] = TRUE;
+$config["appUseDictionary"] = true;
 $config["appDictionaryFile"] = "1.1million word list.txt";
 $config["appDictionarySettings"]["minWordLength"] = 4;
 $config["appDictionarySettings"]["maxWordLength"] = 6;
 
 //  Default Session Variable Name
-$config["appSessionVariable"] = "inCaptcha";
+$config["appSessVar"] = "inCaptcha";
