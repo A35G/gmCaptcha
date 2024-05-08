@@ -30,6 +30,7 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
   Graphical Captcha - *Mathematical operation with sign specification* | `new gmCaptcha({extra: {style: "math",custom: 3}})` | <img src="./screenshots/Graphical Captcha - Mathematical operation with specified.png" />
   Textual Captcha - *Mathematical Operation* | `new gmCaptcha({type: "text"})` | <img src="./screenshots/Textual Captcha - Mathematical Operation.png" />
   Textual Captcha - *Mathematical Operation with sign specification* | `new gmCaptcha({type: "text",extra: {custom: 4}})` | <img src="./screenshots/Textual Captcha - Mathematical operation with specified.png" />
+  Graphical Captcha - *Text (random or from Dictionary file) with Text to Speech and Refresh (generation of a new code)* | `new gmCaptcha()` | <img src="./screenshots/Graphical Captcha - Text with refresh and speech.png" />
 
 # Features
 
@@ -56,7 +57,7 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
     </script>
     ```
 
--	Refresh graphical captchas (*It is only present in the graphical version of the Captcha*);
+-	Refresh captchas (*It is only present in the graphical version of the Captcha*);
 -	Error logger.
 ---
 > [!NOTE]
