@@ -59,6 +59,7 @@ A small and simple Proof-of-Concept of Captcha (graphical and mathematical) for 
 
 -	Refresh captchas (*It is only present in the graphical version of the Captcha*);
 -	Error logger.
+-	Generate a captcha with random text, directly client-side and display it via HTML's Canvas element.
 ---
 > [!NOTE]
 > There are several types of Captcha online, some famous, some less so, all certainly strong and functional.
